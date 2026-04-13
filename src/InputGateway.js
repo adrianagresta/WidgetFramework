@@ -180,6 +180,10 @@ export class InputGateway {
         this.#validator = fn;
     }
 
+    /**
+     * Runs validation functions on value. Sends event to validation handlers. 
+     * @returns validation details. 
+     */
     validate() {
         const value = this.getValue();
         const result = this.#validator ? this.#validator(value) : { valid: true, message: '' };
