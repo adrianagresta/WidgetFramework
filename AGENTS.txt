@@ -1,6 +1,14 @@
 Always follow the best practices for object orientation.
 
-Only use the features of object oriented JavaScript that are widely accepted by major browsers.
+Only use the features of object oriented JavaScript that are widely accepted by major 
+browsers.
 
-Ease of use by developers is the top priority. Second priority is easy of modification of the framework. Third priority is performance. If prioritizing ease of use and ease of modification would have an outsized effect on performance, notify the user prior to completing your task. Explain how and why the modification would adversely impact performance.
+Ease of use by developers is the top priority. Second priority is easy of modification of the 
+framework. Third priority is performance. If prioritizing ease of use and ease of modification 
+would have an outsized effect on performance, notify the user prior to completing your task. 
+Explain how and why the modification would adversely impact performance.
 
+Always add a block comment before each function which conforms to JSDoc standards and describes 
+function operation, inputs, outputs, and side effects.
+
+Add inline comments to clarify any code which can be considered "clever". 
