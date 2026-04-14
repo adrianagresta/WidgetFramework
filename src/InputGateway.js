@@ -1,3 +1,6 @@
+/**
+ * Class representing an input gateway for handling form inputs in widgets.
+ */
 export class InputGateway {
     #element;
     #type;
@@ -5,6 +8,11 @@ export class InputGateway {
     #validator = null;
     #lastValidation = null;
 
+    /**
+     * Creates an InputGateway instance.
+     * @param {string} type - The input type (e.g., 'text', 'number', 'select').
+     * @param {object} options - Configuration options for the input.
+     */
     constructor(type, options = {}) {
         this.#type = type;
         this.#createElement(type);
@@ -12,6 +20,10 @@ export class InputGateway {
         this.#attachListeners();
     }
 
+    /**
+     * Creates the DOM element based on the type.
+     * @param {string} type - The input type.
+     */
     #createElement(type) {
         if (type === 'textarea') {
             this.#element = document.createElement('textarea');
@@ -23,6 +35,10 @@ export class InputGateway {
         }
     }
 
+    /**
+     * Applies configuration options to the element.
+     * @param {object} options - The options object.
+     */
     #applyOptions(options) {
         if (options.placeholder) this.#element.placeholder = options.placeholder;
         if (options.disabled !== undefined) this.#element.disabled = options.disabled;
@@ -54,7 +70,11 @@ export class InputGateway {
         }
     }
 
+    /**
+     * Attaches event listeners to the element.
+     */
     #attachListeners() {
+        // Create an emit function to standardize event details
         const emit = (type, nativeEvent = null) => {
             const value = this.getValue();
             const detail = {
@@ -77,6 +97,9 @@ export class InputGateway {
         this.#element.addEventListener('blur', (e) => emit('blur', e));
     }
 
+    /**
+     * Emits an update event programmatically.
+     */
     #emitUpdate() {
         const value = this.getValue();
         const detail = {
@@ -93,7 +116,12 @@ export class InputGateway {
         if (handlers) for (const h of handlers) h(detail);
     }
 
+    /**
+     * Gets the current value of the input, handling different types.
+     * @returns {*} The value of the input.
+     */
     getValue() {
+        // Handle different input types for value retrieval
         if (this.#type === 'number' || this.#type === 'range') {
             const num = parseFloat(this.#element.value);
             return isNaN(num) ? null : num;
@@ -110,29 +138,53 @@ export class InputGateway {
         return this.#element.value;
     }
 
+    /**
+     * Checks if the input is checked (for checkbox/radio).
+     * @returns {boolean} True if checked.
+     */
     isChecked() {
         return this.#element.checked;
     }
 
+    /**
+     * Gets the selected files (for file input).
+     * @returns {FileList} The files.
+     */
     getFiles() {
         return this.#element.files;
     }
 
+    /**
+     * Gets the selected options (for select).
+     * @returns {Array<string>} Array of selected values.
+     */
     getSelectedOptions() {
         if (this.#type !== 'select') return [];
         return Array.from(this.#element.selectedOptions).map(o => o.value);
     }
 
+    /**
+     * Sets the value of the input.
+     * @param {*} value - The value to set.
+     */
     setValue(value) {
         this.#element.value = value ?? '';
         this.#emitUpdate();
     }
 
+    /**
+     * Sets the checked state (for checkbox/radio).
+     * @param {boolean} bool - The checked state.
+     */
     setChecked(bool) {
         this.#element.checked = bool;
         this.#emitUpdate();
     }
 
+    /**
+     * Sets the options for a select element.
+     * @param {Array<{value: string, label: string, selected?: boolean, disabled?: boolean}>} opts - The options.
+     */
     setOptions(opts) {
         if (this.#type !== 'select') return;
         this.#element.innerHTML = '';
@@ -147,6 +199,9 @@ export class InputGateway {
         this.#emitUpdate();
     }
 
+    /**
+     * Clears the input value.
+     */
     clear() {
         if (this.#type === 'checkbox' || this.#type === 'radio') {
             this.#element.checked = false;
@@ -156,33 +211,58 @@ export class InputGateway {
         this.#emitUpdate();
     }
 
+    /**
+     * Sets the disabled state.
+     * @param {boolean} bool - Whether to disable.
+     */
     setDisabled(bool) {
         this.#element.disabled = bool;
     }
 
+    /**
+     * Sets the read-only state.
+     * @param {boolean} bool - Whether to make read-only.
+     */
     setReadOnly(bool) {
         this.#element.readOnly = bool;
     }
 
+    /**
+     * Sets the placeholder text.
+     * @param {string} text - The placeholder text.
+     */
     setPlaceholder(text) {
         this.#element.placeholder = text;
     }
 
+    /**
+     * Sets an attribute on the element.
+     * @param {string} name - The attribute name.
+     * @param {string} value - The attribute value.
+     */
     setAttribute(name, value) {
         this.#element.setAttribute(name, value);
     }
 
+    /**
+     * Removes an attribute from the element.
+     * @param {string} name - The attribute name.
+     */
     removeAttribute(name) {
         this.#element.removeAttribute(name);
     }
 
+    /**
+     * Sets a validation function.
+     * @param {function} fn - The validator function.
+     */
     setValidator(fn) {
         this.#validator = fn;
     }
 
     /**
-     * Runs validation functions on value. Sends event to validation handlers. 
-     * @returns validation details. 
+     * Runs validation on the current value and emits a validate event.
+     * @returns {object} The validation result.
      */
     validate() {
         const value = this.getValue();
@@ -205,19 +285,36 @@ export class InputGateway {
         return this.#lastValidation;
     }
 
+    /**
+     * Gets the last validation state.
+     * @returns {object|null} The validation state.
+     */
     getValidationState() {
         return this.#lastValidation;
     }
 
+    /**
+     * Clears the validation state.
+     */
     clearValidation() {
         this.#lastValidation = null;
     }
 
+    /**
+     * Adds an event listener.
+     * @param {string} type - The event type.
+     * @param {function} handler - The handler function.
+     */
     on(type, handler) {
         if (!this.#listeners.has(type)) this.#listeners.set(type, []);
         this.#listeners.get(type).push(handler);
     }
 
+    /**
+     * Removes an event listener.
+     * @param {string} type - The event type.
+     * @param {function} handler - The handler function.
+     */
     off(type, handler) {
         const list = this.#listeners.get(type);
         if (!list) return;
@@ -225,20 +322,34 @@ export class InputGateway {
         if (idx !== -1) list.splice(idx, 1);
     }
 
+    /**
+     * Gets the DOM element.
+     * @returns {HTMLElement} The element.
+     */
     getElement() {
         return this.#element;
     }
 
+    /**
+     * Mounts the element to a container.
+     * @param {HTMLElement} container - The container element.
+     */
     mount(container) {
         container.appendChild(this.#element);
     }
 
+    /**
+     * Unmounts the element from its parent.
+     */
     unmount() {
         if (this.#element.parentNode) {
             this.#element.parentNode.removeChild(this.#element);
         }
     }
 
+    /**
+     * Destroys the gateway, cleaning up listeners and removing the element.
+     */
     destroy() {
         this.unmount();
         this.#listeners.clear();

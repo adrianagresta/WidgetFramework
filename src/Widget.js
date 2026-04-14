@@ -3,6 +3,9 @@ import { WidgetEvent } from './WidgetEvent.js';
 import { BindingParser } from './BindingParser.js';
 import { InputGateway } from './InputGateway.js';
 
+/**
+ * Base class for widgets in the framework.
+ */
 export class Widget {
     #state;
     #element;
@@ -17,6 +20,10 @@ export class Widget {
     #slots = new Map();
     #actionCleanups = [];
 
+    /**
+     * Creates a Widget instance.
+     * @param {object} initialState - Initial state for the widget.
+     */
     constructor(initialState = {}) {
         this.#state = { ...this.constructor.defaultState(), ...initialState };
         this.#element = WidgetRegistry.getTemplate(this.constructor.widgetName);
@@ -26,21 +33,60 @@ export class Widget {
         this.onInit();
     }
 
+    /**
+     * Returns the default state for the widget.
+     * @returns {object} Default state object.
+     */
     static defaultState() {
         return {};
     }
 
+    /**
+     * Lifecycle method called after construction.
+     */
     onInit() { }
+
+    /**
+     * Lifecycle method called after mounting.
+     * @param {HTMLElement} parentElement - The parent element.
+     */
     onMount(parentElement) { }
+
+    /**
+     * Lifecycle method called when the widget is ready.
+     */
     onReady() { }
+
+    /**
+     * Lifecycle method called before destruction.
+     */
     onDestroy() { }
+
+    /**
+     * Lifecycle method called when state changes.
+     * @param {Array<string>} changedKeys - The keys that changed.
+     * @param {object} previousState - The previous state.
+     */
     onStateChange(changedKeys, previousState) { }
+
+    /**
+     * Lifecycle method called on broadcast events.
+     * @param {WidgetEvent} event - The broadcast event.
+     */
     onBroadcast(event) { }
 
+    /**
+     * Gets a copy of the current state.
+     * @returns {object} The state object.
+     */
     getState() {
         return { ...this.#state };
     }
 
+    /**
+     * Updates the state partially.
+     * @param {object} partial - The partial state update.
+     */
     setState(partial) {
         if (this.#destroyed) return;
         const prev = { ...this.#state };
@@ -56,6 +102,10 @@ export class Widget {
         this.onStateChange(changed, prev);
     }
 
+    /**
+     * Updates bindings for changed state keys.
+     * @param {Array<string>} changedKeys - The changed keys.
+     */
     #updateBindings(changedKeys) {
         for (const key of changedKeys) {
             const bindings = this.#bindings.get(key);
@@ -67,6 +117,11 @@ export class Widget {
         }
     }
 
+    /**
+     * Applies a binding to an element.
+     * @param {object} binding - The binding object.
+     * @param {*} value - The value to apply.
+     */
     #applyBinding(binding, value) {
         const el = binding.element;
         switch (binding.type) {
@@ -101,6 +156,9 @@ export class Widget {
         }
     }
 
+    /**
+     * Parses all bindings and actions from the template.
+     */
     #parseAllBindings() {
         for (const el of this.#element.querySelectorAll('[data-bind]')) {
             for (const b of BindingParser.parseBindings(el.getAttribute('data-bind'))) {
@@ -136,6 +194,11 @@ export class Widget {
         }
     }
 
+    /**
+     * Reads gateway attributes from an element.
+     * @param {HTMLElement} el - The element.
+     * @returns {object} The options object.
+     */
     #readGatewayAttributes(el) {
         const options = {};
         if (el.hasAttribute('data-gateway-placeholder')) options.placeholder = el.getAttribute('data-gateway-placeholder');
@@ -143,6 +206,12 @@ export class Widget {
         return options;
     }
 
+    /**
+     * Adds a child widget.
+     * @param {Widget} widget - The child widget.
+     * @param {string} slotName - The slot name.
+     * @returns {Widget} The added widget.
+     */
     addChild(widget, slotName = 'default') {
         if (this.#children.includes(widget)) return widget;
         if (widget.#parent) {
@@ -158,6 +227,10 @@ export class Widget {
         return widget;
     }
 
+    /**
+     * Removes a child widget.
+     * @param {Widget} widget - The child widget.
+     */
     removeChild(widget) {
         const idx = this.#children.indexOf(widget);
         if (idx === -1) return;
@@ -166,16 +239,30 @@ export class Widget {
         widget.destroy();
     }
 
+    /**
+     * Gets all children.
+     * @returns {Array<Widget>} The children.
+     */
     getChildren() {
         return [...this.#children];
     }
 
+    /**
+     * Gets children in a specific slot.
+     * @param {string} slotName - The slot name.
+     * @returns {Array<Widget>} The children in the slot.
+     */
     getChildrenInSlot(slotName) {
         const slotEl = this.#slots.get(slotName);
         if (!slotEl) return [];
         return this.#children.filter(child => slotEl.contains(child.#element));
     }
 
+    /**
+     * Emits an event.
+     * @param {string} type - The event type.
+     * @param {object} detail - Event detail.
+     */
     emit(type, detail = {}) {
         const event = new WidgetEvent(type, this, detail);
         const handlers = this.#listeners.get(type);
@@ -187,11 +274,21 @@ export class Widget {
         }
     }
 
+    /**
+     * Adds an event listener.
+     * @param {string} type - The event type.
+     * @param {function} handler - The handler.
+     */
     on(type, handler) {
         if (!this.#listeners.has(type)) this.#listeners.set(type, []);
         this.#listeners.get(type).push(handler);
     }
 
+    /**
+     * Removes an event listener.
+     * @param {string} type - The event type.
+     * @param {function} handler - The handler.
+     */
     off(type, handler) {
         const list = this.#listeners.get(type);
         if (!list) return;
@@ -199,12 +296,22 @@ export class Widget {
         if (idx !== -1) list.splice(idx, 1);
     }
 
+    /**
+     * Broadcasts an event to children.
+     * @param {string} type - The event type.
+     * @param {object} detail - Event detail.
+     */
     broadcast(type, detail = {}) {
         const event = new WidgetEvent(type, this, detail);
         this.#broadcastDown(event);
     }
 
+    /**
+     * Broadcasts an event down the tree.
+     * @param {WidgetEvent} event - The event.
+     */
     #broadcastDown(event) {
+        // Construct handler name dynamically from event type
         const handlerName = 'on' + event.type[0].toUpperCase() + event.type.slice(1);
         for (const child of this.#children) {
             event.currentTarget = child;
@@ -216,6 +323,11 @@ export class Widget {
         }
     }
 
+    /**
+     * Mounts the widget to a parent element.
+     * @param {HTMLElement} parentElement - The parent.
+     * @param {HTMLElement} anchor - The anchor element.
+     */
     mount(parentElement, anchor = null) {
         if (this.#mounted || this.#destroyed) return;
         parentElement.insertBefore(this.#element, anchor);
@@ -230,11 +342,19 @@ export class Widget {
         this.#checkReady();
     }
 
+    /**
+     * Finds the slot for a child.
+     * @param {Widget} child - The child widget.
+     * @returns {HTMLElement|null} The slot element.
+     */
     #findSlotFor(child) {
         // For simplicity, assume default slot
         return this.#element;
     }
 
+    /**
+     * Unmounts the widget.
+     */
     unmount() {
         if (!this.#mounted) return;
         for (const child of this.#children) {
@@ -247,6 +367,9 @@ export class Widget {
         this.#ready = false;
     }
 
+    /**
+     * Destroys the widget.
+     */
     destroy() {
         if (this.#destroyed) return;
         this.onDestroy();
@@ -272,40 +395,80 @@ export class Widget {
         }
     }
 
+    /**
+     * Gets the root element.
+     * @returns {HTMLElement} The element.
+     */
     getElement() {
         return this.#element;
     }
 
+    /**
+     * Applies a CSS property.
+     * @param {string} property - The property.
+     * @param {string} value - The value.
+     */
     applyStyle(property, value) {
         this.#element.style.setProperty(property, value);
     }
 
+    /**
+     * Applies multiple CSS properties.
+     * @param {object} map - Property-value map.
+     */
     applyStyles(map) {
         for (const [prop, val] of Object.entries(map)) {
             this.#element.style.setProperty(prop, val);
         }
     }
 
+    /**
+     * Removes a CSS property.
+     * @param {string} property - The property.
+     */
     removeStyle(property) {
         this.#element.style.removeProperty(property);
     }
 
+    /**
+     * Clears all styles.
+     */
     clearStyles() {
         this.#element.style.cssText = '';
     }
 
+    /**
+     * Adds a CSS class.
+     * @param {string} name - The class name.
+     */
     addCSSClass(name) {
         this.#element.classList.add(name);
     }
 
+    /**
+     * Removes a CSS class.
+     * @param {string} name - The class name.
+     */
     removeCSSClass(name) {
         this.#element.classList.remove(name);
     }
 
+    /**
+     * Toggles a CSS class.
+     * @param {string} name - The class name.
+     * @param {boolean} force - Force state.
+     */
     toggleCSSClass(name, force) {
         this.#element.classList.toggle(name, force);
     }
 
+    /**
+     * Creates a gateway.
+     * @param {string} name - The gateway name.
+     * @param {string} type - The input type.
+     * @param {object} options - Options.
+     * @returns {InputGateway} The gateway.
+     */
     createGateway(name, type, options = {}) {
         const gw = new InputGateway(type, options);
         const el = this.#element.querySelector(`[data-gateway="${name}"]`);
@@ -314,10 +477,19 @@ export class Widget {
         return gw;
     }
 
+    /**
+     * Gets a gateway.
+     * @param {string} name - The gateway name.
+     * @returns {InputGateway|null} The gateway.
+     */
     getGateway(name) {
         return this.#gateways.get(name) ?? null;
     }
 
+    /**
+     * Destroys a gateway.
+     * @param {string} name - The gateway name.
+     */
     destroyGateway(name) {
         const gw = this.#gateways.get(name);
         if (gw) {
@@ -326,6 +498,9 @@ export class Widget {
         }
     }
 
+    /**
+     * Checks if the widget is ready.
+     */
     #checkReady() {
         if (this.#ready) return;
         for (const child of this.#children) {

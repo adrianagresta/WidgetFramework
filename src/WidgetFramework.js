@@ -2,7 +2,17 @@ import { WidgetRegistry } from './WidgetRegistry.js';
 import { TemplateLoader } from './TemplateLoader.js';
 import { CSSRewriter } from './CSSRewriter.js';
 
+/**
+ * Main framework class for initializing widgets.
+ */
 export class WidgetFramework {
+    /**
+     * Initializes the framework with configuration.
+     * @param {object} config - Configuration object.
+     * @param {string} config.globalCSS - URL to global CSS.
+     * @param {Array<Function>} config.widgets - Array of widget classes.
+     * @param {string} config.widgetRoot - Root path for widget files.
+     */
     static async init(config) {
         if (config.globalCSS) {
             const css = await fetch(config.globalCSS).then(r => r.text());
